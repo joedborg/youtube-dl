@@ -54,3 +54,8 @@ venv/
 
 # Snap related files
 *.snap
+.snapcraft/
+parts/
+prime/
+stage/
+youtube-dl_source.tar.bz2

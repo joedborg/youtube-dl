@@ -1,5 +1,4 @@
 name: youtube-dl
-base: core18
 version: 'git'
 summary: Download videos from youtube.com or other video platforms
 description: |
@@ -16,6 +15,8 @@ parts:
   youtube-dl:
     plugin: python
     source: .
+    after:
+      - ffmpeg
 
 apps:
   youtube-dl:
@@ -23,3 +24,4 @@ apps:
     plugs:
       - home
       - network
+      - removable-media
