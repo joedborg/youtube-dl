@@ -15,8 +15,8 @@ parts:
   youtube-dl:
     plugin: python
     source: .
-    after:
-      - ffmpeg
+
+  ffmpeg:
 
 apps:
   youtube-dl:
