@@ -18,9 +18,11 @@ parts:
     after:
       - ffmpeg
 
+  locales-launch:
+
 apps:
   youtube-dl:
-    command: youtube-dl
+    command: locales-launch youtube-dl
     plugs:
       - home
       - network
