@@ -18,12 +18,13 @@ parts:
 
   ffmpeg:
 
-  locales-launch:
-
 apps:
   youtube-dl:
-    command: locales-launch youtube-dl
+    command: youtube-dl
     plugs:
       - home
       - network
       - removable-media
+    environment:
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
