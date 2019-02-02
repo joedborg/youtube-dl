@@ -18,6 +18,7 @@ from ..utils import (
     int_or_none,
     unified_strdate,
     update_url_query,
+    url_or_none,
 )
 
 
@@ -395,18 +396,23 @@ class SoundcloudPagedPlaylistBaseIE(SoundcloudPlaylistBaseIE):
             # Empty collection may be returned, in this case we proceed
             # straight to next_href
 
-            def resolve_permalink_url(candidates):
+            def resolve_entry(candidates):
                 for cand in candidates:
-                    if isinstance(cand, dict):
-                        permalink_url = cand.get('permalink_url')
-                        entry_id = self._extract_id(cand)
-                        if permalink_url and permalink_url.startswith('http'):
-                            return permalink_url, entry_id
+                    if not isinstance(cand, dict):
+                        continue
+                    permalink_url = url_or_none(cand.get('permalink_url'))
+                    if not permalink_url:
+                        continue
+                    return self.url_result(
+                        permalink_url,
+                        ie=SoundcloudIE.ie_key() if SoundcloudIE.suitable(permalink_url) else None,
+                        video_id=self._extract_id(cand),
+                        video_title=cand.get('title'))
 
             for e in collection:
-                permalink_url, entry_id = resolve_permalink_url((e, e.get('track'), e.get('playlist')))
-                if permalink_url:
-                    entries.append(self.url_result(permalink_url, video_id=entry_id))
+                entry = resolve_entry((e, e.get('track'), e.get('playlist')))
+                if entry:
+                    entries.append(entry)
 
             next_href = response.get('next_href')
             if not next_href:
