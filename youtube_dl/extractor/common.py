@@ -13,6 +13,7 @@ import socket
 import sys
 import time
 import math
+import xml
 
 from ..compat import (
     compat_cookiejar,
@@ -107,7 +108,10 @@ class InfoExtractor(object):
                                    for RTMP - RTMP URL,
                                    for HLS - URL of the M3U8 media playlist,
                                    for HDS - URL of the F4M manifest,
-                                   for DASH - URL of the MPD manifest,
+                                   for DASH - URL of the MPD manifest or
+                                              base URL representing the media
+                                              if MPD manifest is parsed from
+                                              a string,
                                    for MSS - URL of the ISM manifest.
                     * manifest_url
                                  The URL of the manifest file in case of
@@ -1464,6 +1468,9 @@ class InfoExtractor(object):
     def _parse_f4m_formats(self, manifest, manifest_url, video_id, preference=None, f4m_id=None,
                            transform_source=lambda s: fix_xml_ampersands(s).strip(),
                            fatal=True, m3u8_id=None):
+        if not isinstance(manifest, xml.etree.ElementTree.Element) and not fatal:
+            return []
+
         # currently youtube-dl cannot decode the playerVerificationChallenge as Akamai uses Adobe Alchemy
         akamai_pv = manifest.find('{http://ns.adobe.com/f4m/1.0}pv-2.0')
         if akamai_pv is not None and ';' in akamai_pv.text:
@@ -2130,7 +2137,8 @@ class InfoExtractor(object):
                         bandwidth = int_or_none(representation_attrib.get('bandwidth'))
                         f = {
                             'format_id': '%s-%s' % (mpd_id, representation_id) if mpd_id else representation_id,
-                            'url': mpd_url,
+                            # NB: mpd_url may be empty when MPD manifest is parsed from a string
+                            'url': mpd_url or base_url,
                             'manifest_url': mpd_url,
                             'ext': mimetype2ext(mime_type),
                             'width': int_or_none(representation_attrib.get('width')),
