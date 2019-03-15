@@ -42,7 +42,7 @@ upstream_release="$(
 
 upstream_commit_hash="$(
     # FIXME: The refspec might be blatantly wrong as I simply trial-by-error to make out of it
-    git describe --always --abbrev=7 master^2
+    git describe --always --abbrev=7 --match=nothing master^2
 )"
 
 snap_version_string="${upstream_release}+git${upstream_commit_hash}"
