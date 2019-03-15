@@ -41,8 +41,19 @@ upstream_release="$(
 )"
 
 upstream_commit_hash="$(
-    # FIXME: The refspec might be blatantly wrong as I simply trial-by-error to make out of it
-    git describe --always --abbrev=7 --match=nothing master^2
+    # "The second parent commit of the merge commit"
+    # Refer gitrevisions(7) manual page for info of the revision specifications
+    git describe \
+        --abbrev=7 \
+        --always \
+        --match=nothing \
+        "$(git log \
+            --extended-regexp \
+            --grep='^.*Merge.*(rg3|ytdl-org)/master.*$' \
+            --max-count=1 \
+            --pretty=format:%H \
+            --regexp-ignore-case
+        )"^2
 )"
 
 snap_version_string="${upstream_release}+git${upstream_commit_hash}"
