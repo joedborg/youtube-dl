@@ -19,7 +19,7 @@ parts:
     plugin: python
     source: .
     build-packages:
-    - git-core
+      - git-core
     override-pull: |
       snapcraftctl pull
 
