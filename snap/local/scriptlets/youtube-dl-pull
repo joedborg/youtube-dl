@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# override-pull scriptlet for youtube-dl snap part.  This scriptlet sets
+# up the proper version string to the snap
+#
+# Run `./snap/local/scriptlets/youtube-dl-pull --dry-run` from the
+# project dir for testing
+# 林博仁(Buo-ren, Lin) © 2019
+
+set \
+    -o errexit \
+    -o nounset
+
+declare \
+    flag_dry_run=false \
+    upstream_release \
+    upstream_commit_hash \
+    snap_version_string
+
+for commandline_argument in "${@}"; do
+    case "${commandline_argument}" in
+        # Enable execution tracing
+        --debug)
+            set -o xtrace
+        ;;
+        # Don't run snapcraftctl for testing purpose
+        --dry-run)
+            flag_dry_run=true
+        ;;
+        *)
+            printf -- \
+                'youtube-dl-pull: Error: Invalid command-line argument, check the script source for supported command-line options\n' \
+                >&2
+            exit 1
+        ;;
+    esac
+done
+
+upstream_release="$(
+    grep __version__ youtube_dl/version.py \
+        | cut --delimiter="'" --fields=2
+)"
+
+upstream_commit_hash="$(
+    # FIXME: The refspec might be blatantly wrong as I simply trial-by-error to make out of it
+    git describe --always --abbrev=7 master^2
+)"
+
+snap_version_string="${upstream_release}+git${upstream_commit_hash}"
+printf -- \
+    'youtube-dl-pull: Set snap version to "%s".\n' \
+    "${snap_version_string}"
+
+if [ "${flag_dry_run}" = false ]; then
+    snapcraftctl set-version "${snap_version_string}"
+fi
+
+exit 0
