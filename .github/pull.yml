@@ -1,5 +1,5 @@
 version: "1"
 rules:
   - base: master
-    upstream: rg3:master
+    upstream: ytdl-org:master
     autoMerge: true
