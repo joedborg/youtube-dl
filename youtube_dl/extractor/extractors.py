@@ -579,6 +579,7 @@ from .linkedin import (
 )
 from .linuxacademy import LinuxAcademyIE
 from .litv import LiTVIE
+from .livejournal import LiveJournalIE
 from .liveleak import (
     LiveLeakIE,
     LiveLeakEmbedIE,
@@ -1254,6 +1255,10 @@ from .udn import UDNEmbedIE
 from .ufctv import UFCTVIE
 from .uktvplay import UKTVPlayIE
 from .digiteka import DigitekaIE
+from .dlive import (
+    DLiveVODIE,
+    DLiveStreamIE,
+)
 from .umg import UMGDeIE
 from .unistra import UnistraIE
 from .unity import UnityIE
