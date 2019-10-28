@@ -428,7 +428,6 @@ from .googlesearch import GoogleSearchIE
 from .goshgay import GoshgayIE
 from .gputechconf import GPUTechConfIE
 from .groupon import GrouponIE
-from .hark import HarkIE
 from .hbo import HBOIE
 from .hearthisat import HearThisAtIE
 from .heise import HeiseIE
@@ -546,7 +545,6 @@ from .lcp import (
     LcpPlayIE,
     LcpIE,
 )
-from .learnr import LearnrIE
 from .lecture2go import Lecture2GoIE
 from .lecturio import (
     LecturioIE,
@@ -598,7 +596,6 @@ from .lynda import (
     LyndaCourseIE
 )
 from .m6 import M6IE
-from .macgamestore import MacGameStoreIE
 from .mailru import (
     MailRuIE,
     MailRuMusicIE,
@@ -1185,7 +1182,6 @@ from .tunein import (
 )
 from .tunepk import TunePkIE
 from .turbo import TurboIE
-from .tutv import TutvIE
 from .tv2 import (
     TV2IE,
     TV2ArticleIE,
