@@ -455,7 +455,6 @@ from .hungama import (
     HungamaSongIE,
 )
 from .hypem import HypemIE
-from .iconosquare import IconosquareIE
 from .ign import (
     IGNIE,
     OneUPIE,
@@ -515,7 +514,6 @@ from .ketnet import KetnetIE
 from .khanacademy import KhanAcademyIE
 from .kickstarter import KickStarterIE
 from .kinopoisk import KinoPoiskIE
-from .keek import KeekIE
 from .konserthusetplay import KonserthusetPlayIE
 from .kontrtube import KontrTubeIE
 from .krasview import KrasViewIE
