@@ -91,10 +91,10 @@ class IviIE(InfoExtractor):
                     'contentid': video_id
                 }
             ]
-        }).encode()
+        })
 
         for site in (353, 183):
-            content_data = data % site
+            content_data = (data % site).encode()
             if site == 353:
                 try:
                     from Cryptodome.Cipher import Blowfish
@@ -137,7 +137,7 @@ class IviIE(InfoExtractor):
                     continue
                 elif not pycryptodomex_found:
                     raise ExtractorError(
-                        'pycryptodome not found. Please install it.',
+                        'pycryptodomex not found. Please install it.',
                         expected=True)
                 elif message:
                     extractor_msg += ': ' + message
