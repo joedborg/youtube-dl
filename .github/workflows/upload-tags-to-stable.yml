@@ -13,7 +13,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Clean apt lxd
       run: sudo apt-get purge lxd lxd-client lxc -y
-    - name: Install l
+    - name: Install lxd
       run: sudo snap install lxd
     - name: Wait for lxd to be ready
       run: sudo /snap/bin/lxd waitready
