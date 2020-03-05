@@ -53,7 +53,7 @@ upstream_commit_hash="$(
             --max-count=1 \
             --pretty=format:%H \
             --regexp-ignore-case
-        )"^2
+        )"^2 || git describe --tags
 )"
 
 snap_version_string="${upstream_release}+git${upstream_commit_hash}"
