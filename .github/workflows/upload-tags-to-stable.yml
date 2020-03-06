@@ -16,7 +16,7 @@ jobs:
     - name: Make launchpad credentials directories
       run: mkdir -p ~/.local/share/snapcraft/provider/launchpad/ && sudo mkdir -p /root/.local/share/snapcraft/provider/launchpad/
     - name: Write launchpad credentials file
-      run: echo "${{ secrets.LAUNCHPAD_CREDENTIAL_FILE }} | base64 -d > ~/.local/share/snapcraft/provider/launchpad/credentials
+      run: echo "${{ secrets.LAUNCHPAD_CREDENTIAL_FILE }}" | base64 -d > ~/.local/share/snapcraft/provider/launchpad/credentials
     - name: Copy launchpad credentials file to root
       run: sudo cp ~/.local/share/snapcraft/provider/launchpad/credentials /root//.local/share/snapcraft/provider/launchpad/credentials
     - name: Logging into snapstore
@@ -24,4 +24,4 @@ jobs:
     - name: Build snap across archs
       run: sudo snapcraft remote-build --launchpad-accept-public-upload
     - name: Pushing to snaptore
-      run: for arch in arm64 armhf amd64 i386; do sudo snapcraft push ./youtube-dl_*_${arch}.snap --release=stable; done 
+      run: for arch in arm64 armhf amd64 i386; do sudo snapcraft push ./youtube-dl_*_${arch}.snap --release=stable; done
