@@ -18,7 +18,7 @@ jobs:
     - name: Write launchpad credentials file
       run: echo "${{ secrets.LAUNCHPAD_CREDENTIAL_FILE }}" | base64 -d > ~/.local/share/snapcraft/provider/launchpad/credentials
     - name: Copy launchpad credentials file to root
-      run: sudo cp ~/.local/share/snapcraft/provider/launchpad/credentials /root//.local/share/snapcraft/provider/launchpad/credentials
+      run: sudo cp ~/.local/share/snapcraft/provider/launchpad/credentials /root/.local/share/snapcraft/provider/launchpad/credentials
     - name: Logging into snapstore
       run: echo "${{ secrets.SNAPSTORE_TOKEN }}" | sudo snapcraft login --with -
     - name: Build snap across archs
