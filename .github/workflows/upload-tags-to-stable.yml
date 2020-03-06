@@ -11,21 +11,11 @@ jobs:
     steps:
     - name: Checking out repo
       uses: actions/checkout@v2
-    - name: Clean apt lxd
-      run: sudo apt-get purge lxd lxd-client lxc -y
-    - name: Install lxd
-      run: sudo snap install lxd
-    - name: Wait for lxd to be ready
-      run: sudo /snap/bin/lxd waitready
-    - name: Initialise lxd
-      run: sudo /snap/bin/lxd init --auto
     - name: Install snapcraft
       run: sudo snap install snapcraft --classic
-    - name: Build snap
-      run: sudo snapcraft --use-lxd
-    - name: Make built snap name generic
-      run: sudo mv youtube-dl*.snap youtube-dl.snap
+    - name: Build snap across archs
+      run: snapcraft remote-build --launchpad-accept-public-upload
     - name: Logging into snapstore
       run: echo "${{ secrets.SNAPSTORE_TOKEN }}" | sudo snapcraft login --with -
     - name: Pushing to snaptore
-      run: sudo snapcraft push ./youtube-dl.snap --release=stable
+      run: for arch in arm64 armhf amd64 i386; do sudo snapcraft push ./youtube-dl_*_${arch}.snap --release=stable; done 
