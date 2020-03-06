@@ -13,9 +13,9 @@ jobs:
       uses: actions/checkout@v2
     - name: Install snapcraft
       run: sudo snap install snapcraft --classic
-    - name: Build snap across archs
-      run: snapcraft remote-build --launchpad-accept-public-upload
     - name: Logging into snapstore
       run: echo "${{ secrets.SNAPSTORE_TOKEN }}" | sudo snapcraft login --with -
+    - name: Build snap across archs
+      run: snapcraft remote-build --launchpad-accept-public-upload
     - name: Pushing to snaptore
       run: for arch in arm64 armhf amd64 i386; do sudo snapcraft push ./youtube-dl_*_${arch}.snap --release=stable; done 
