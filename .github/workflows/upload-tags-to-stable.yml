@@ -1,7 +1,8 @@
 name: Upload Upstream Tags To Stable
 on:
   push:
-    tags: '*'  # All tag releases
+    tags:
+      - '*'  # All tag releases
 
 jobs:
   build:
