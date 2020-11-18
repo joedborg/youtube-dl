@@ -17,5 +17,6 @@ jobs:
           base: master
           head: master
           owner: ytdl-org 
+          merge_method: rebase 
           auto_approve: true
           personal_token: ${{ secrets.PERSONAL_TOKEN }}
