@@ -68,7 +68,7 @@ class RaiBaseIE(InfoExtractor):
 
             # This does not imply geo restriction (e.g.
             # http://www.raisport.rai.it/dl/raiSport/media/rassegna-stampa-04a9f4bd-b563-40cf-82a6-aad3529cb4a9.html)
-            if media_url == 'http://download.rai.it/video_no_available.mp4':
+            if '/video_no_available.mp4' in media_url:
                 continue
 
             ext = determine_ext(media_url)
@@ -424,7 +424,7 @@ class RaiIE(RaiBaseIE):
             except ExtractorError:
                 pass
 
-        relinker_url = self._search_regex(
+        relinker_url = self._proto_relative_url(self._search_regex(
             r'''(?x)
                 (?:
                     var\s+videoURL|
@@ -436,7 +436,7 @@ class RaiIE(RaiBaseIE):
                     //mediapolis(?:vod)?\.rai\.it/relinker/relinkerServlet\.htm\?
                     (?:(?!\1).)*\bcont=(?:(?!\1).)+)\1
             ''',
-            webpage, 'relinker URL', group='url')
+            webpage, 'relinker URL', group='url'))
 
         relinker_info = self._extract_relinker_info(
             urljoin(url, relinker_url), video_id)
