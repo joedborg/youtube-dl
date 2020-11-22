@@ -963,6 +963,7 @@ from .rtve import RTVEALaCartaIE, RTVELiveIE, RTVEInfantilIE, RTVELiveIE, RTVETe
 from .rtvnh import RTVNHIE
 from .rtvs import RTVSIE
 from .ruhd import RUHDIE
+from .rumble import RumbleEmbedIE
 from .rutube import (
     RutubeIE,
     RutubeChannelIE,
@@ -1013,6 +1014,16 @@ from .shared import (
 from .showroomlive import ShowRoomLiveIE
 from .sina import SinaIE
 from .sixplay import SixPlayIE
+from .skyit import (
+    SkyItPlayerIE,
+    SkyItVideoIE,
+    SkyItVideoLiveIE,
+    SkyItIE,
+    SkyItAcademyIE,
+    SkyItArteIE,
+    CieloTVItIE,
+    TV8ItIE,
+)
 from .skylinewebcams import SkylineWebcamsIE
 from .skynewsarabia import (
     SkyNewsArabiaIE,
