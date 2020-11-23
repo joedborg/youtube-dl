@@ -2621,11 +2621,11 @@ class YoutubeTabIE(YoutubeBaseInfoExtractor):
         'url': 'https://www.youtube.com/c/CommanderVideoHq/live',
         'only_matching': True,
     },
-    # TODO
-    # {
-    #     'url': 'https://www.youtube.com/TheYoungTurks/live',
-    #     'only_matching': True,
-    # }
+        # TODO
+        # {
+        #     'url': 'https://www.youtube.com/TheYoungTurks/live',
+        #     'only_matching': True,
+        # }
     ]
 
     def _extract_channel_id(self, webpage):
@@ -3013,7 +3013,7 @@ class YoutubeTabIE(YoutubeBaseInfoExtractor):
             self.to_screen('Downloading playlist %s - add --no-playlist to just download video %s' % (playlist_id, video_id))
         webpage = self._download_webpage(url, item_id)
         identity_token = self._search_regex(
-            r'\bID_TOKEN["\']\s*:\s/l*["\'](.+?)["\']', webpage,
+            r'\bID_TOKEN["\']\s*:\s*["\'](.+?)["\']', webpage,
             'identity token', default=None)
         data = self._extract_yt_initial_data(item_id, webpage)
         tabs = try_get(
@@ -3147,6 +3147,25 @@ class YoutubeYtUserIE(InfoExtractor):
         return self.url_result(
             'https://www.youtube.com/user/%s' % user_id,
             ie=YoutubeTabIE.ie_key(), video_id=user_id)
+
+
+class YoutubeFavouritesIE(YoutubeBaseInfoExtractor):
+    IE_NAME = 'youtube:favorites'
+    IE_DESC = 'YouTube.com favourite videos, ":ytfav" for short (requires authentication)'
+    _VALID_URL = r'https?://(?:www\.)?youtube\.com/my_favorites|:ytfav(?:ou?rites)?'
+    _LOGIN_REQUIRED = True
+    _TESTS = [{
+        'url': ':ytfav',
+        'only_matching': True,
+    }, {
+        'url': ':ytfavorites',
+        'only_matching': True,
+    }]
+
+    def _real_extract(self, url):
+        return self.url_result(
+            'https://www.youtube.com/playlist?list=LL',
+            ie=YoutubeTabIE.ie_key())
 
 
 class YoutubeSearchIE(SearchInfoExtractor, YoutubeBaseInfoExtractor):
