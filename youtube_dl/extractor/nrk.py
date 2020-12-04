@@ -31,6 +31,22 @@ class NRKBaseIE(InfoExtractor):
             re.sub(r'(?:bw_(?:low|high)=\d+|no_audio_only)&?', '', asset_url),
             video_id, 'mp4', 'm3u8_native', fatal=False)
 
+    def _raise_error(self, data):
+        MESSAGES = {
+            'ProgramRightsAreNotReady': 'Du kan dessverre ikke se eller høre programmet',
+            'ProgramRightsHasExpired': 'Programmet har gått ut',
+            'NoProgramRights': 'Ikke tilgjengelig',
+            'ProgramIsGeoBlocked': 'NRK har ikke rettigheter til å vise dette programmet utenfor Norge',
+        }
+        message_type = data.get('messageType', '')
+        # Can be ProgramIsGeoBlocked or ChannelIsGeoBlocked*
+        if 'IsGeoBlocked' in message_type or try_get(data, lambda x: x['usageRights']['isGeoBlocked']) is True:
+            self.raise_geo_restricted(
+                msg=MESSAGES.get('ProgramIsGeoBlocked'),
+                countries=self._GEO_COUNTRIES)
+        message = data.get('endUserMessage') or MESSAGES.get(message_type, message_type)
+        raise ExtractorError('%s said: %s' % (self.IE_NAME, message), expected=True)
+
 
 class NRKIE(NRKBaseIE):
     _VALID_URL = r'''(?x)
@@ -88,6 +104,9 @@ class NRKIE(NRKBaseIE):
         manifest = self._download_json(
             'http://psapi.nrk.no/playback/manifest/%s' % video_id,
             video_id, 'Downloading manifest JSON')
+
+        if manifest.get('playability') == 'nonPlayable':
+            self._raise_error(manifest['nonPlayable'])
 
         playable = manifest['playable']
 
@@ -148,14 +167,7 @@ class NRKIE(NRKBaseIE):
 class NRKTVIE(NRKBaseIE):
     IE_DESC = 'NRK TV and NRK Radio'
     _EPISODE_RE = r'(?P<id>[a-zA-Z]{4}\d{8})'
-    _VALID_URL = r'''(?x)
-                        https?://
-                            (?:tv|radio)\.nrk(?:super)?\.no/
-                            (?:serie(?:/[^/]+){1,}|program)/
-                            (?![Ee]pisodes)%s
-                            (?:/\d{2}-\d{2}-\d{4})?
-                            (?:\#del=(?P<part_id>\d+))?
-                    ''' % _EPISODE_RE
+    _VALID_URL = r'https?://(?:tv|radio)\.nrk(?:super)?\.no/(?:[^/]+/)*%s' % _EPISODE_RE
     _API_HOSTS = ('psapi-ne.nrk.no', 'psapi-we.nrk.no')
     _TESTS = [{
         'url': 'https://tv.nrk.no/program/MDDP12000117',
@@ -359,22 +371,7 @@ class NRKTVIE(NRKBaseIE):
                     }]
 
         if not entries:
-            MESSAGES = {
-                'ProgramRightsAreNotReady': 'Du kan dessverre ikke se eller høre programmet',
-                'ProgramRightsHasExpired': 'Programmet har gått ut',
-                'NoProgramRights': 'Ikke tilgjengelig',
-                'ProgramIsGeoBlocked': 'NRK har ikke rettigheter til å vise dette programmet utenfor Norge',
-            }
-            message_type = data.get('messageType', '')
-            # Can be ProgramIsGeoBlocked or ChannelIsGeoBlocked*
-            if 'IsGeoBlocked' in message_type or try_get(data, lambda x: x['usageRights']['isGeoBlocked']) is True:
-                self.raise_geo_restricted(
-                    msg=MESSAGES.get('ProgramIsGeoBlocked'),
-                    countries=self._GEO_COUNTRIES)
-            raise ExtractorError(
-                '%s said: %s' % (self.IE_NAME, MESSAGES.get(
-                    message_type, message_type)),
-                expected=True)
+            self._raise_error(data)
 
         series = conviva.get('seriesName') or data.get('seriesTitle')
         episode = conviva.get('episodeName') or data.get('episodeNumberOrDate')
@@ -521,7 +518,8 @@ class NRKTVSerieBaseIE(InfoExtractor):
         config = self._parse_json(
             self._search_regex(
                 (r'INITIAL_DATA(?:_V\d)?_*\s*=\s*({.+?})\s*;',
-                 r'({.+?})\s*,\s*"[^"]+"\s*\)\s*</script>'),
+                 r'({.+?})\s*,\s*"[^"]+"\s*\)\s*</script>',
+                 r'PRELOADED_STATE_*\s*=\s*({.+?})\s*\n'),
                 webpage, 'config', default='{}' if not fatal else NO_DEFAULT),
             display_id, fatal=False, transform_source=js_to_json)
         if not config:
@@ -531,12 +529,26 @@ class NRKTVSerieBaseIE(InfoExtractor):
             (lambda x: x['initialState']['series'], lambda x: x['series']),
             dict)
 
-    def _extract_seasons(self, seasons):
+    def _extract_seasons(self, domain, series_id, seasons):
+        if isinstance(seasons, dict):
+            seasons = seasons.get('seasons')
         if not isinstance(seasons, list):
             return []
         entries = []
         for season in seasons:
-            entries.extend(self._extract_episodes(season))
+            if not isinstance(season, dict):
+                continue
+            episodes = self._extract_episodes(season)
+            if episodes:
+                entries.extend(episodes)
+                continue
+            season_name = season.get('name')
+            if season_name and isinstance(season_name, compat_str):
+                entries.append(self.url_result(
+                    'https://%s.nrk.no/serie/%s/sesong/%s'
+                    % (domain, series_id, season_name),
+                    ie=NRKTVSeasonIE.ie_key(),
+                    video_title=season.get('title')))
         return entries
 
     def _extract_episodes(self, season):
@@ -713,6 +725,13 @@ class NRKTVSeriesIE(NRKTVSerieBaseIE):
     }, {
         'url': 'https://tv.nrk.no/serie/postmann-pat',
         'only_matching': True,
+    }, {
+        'url': 'https://radio.nrk.no/serie/dickie-dick-dickens',
+        'info_dict': {
+            'id': 'dickie-dick-dickens',
+        },
+        'playlist_mincount': 8,
+        'expected_warnings': ['HTTP Error 404: Not Found'],
     }]
 
     @classmethod
@@ -748,7 +767,7 @@ class NRKTVSeriesIE(NRKTVSerieBaseIE):
         # New layout (e.g. https://tv.nrk.no/serie/backstage)
         if series:
             entries = []
-            entries.extend(self._extract_seasons(series.get('seasons')))
+            entries.extend(self._extract_seasons(domain, series_id, series.get('seasons')))
             entries.extend(self._extract_entries(series.get('instalments')))
             entries.extend(self._extract_episodes(series.get('extraMaterial')))
             return self.playlist_result(entries, series_id, title, description)
