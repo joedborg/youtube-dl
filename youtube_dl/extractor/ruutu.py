@@ -13,7 +13,14 @@ from ..utils import (
 
 
 class RuutuIE(InfoExtractor):
-    _VALID_URL = r'https?://(?:www\.)?(?:ruutu|supla)\.fi/(?:video|supla)/(?P<id>\d+)'
+    _VALID_URL = r'''(?x)
+                    https?://
+                        (?:
+                            (?:www\.)?(?:ruutu|supla)\.fi/(?:video|supla|audio)/|
+                            static\.nelonenmedia\.fi/player/misc/embed_player\.html\?.*?\bnid=
+                        )
+                        (?P<id>\d+)
+                    '''
     _TESTS = [
         {
             'url': 'http://www.ruutu.fi/video/2058907',
@@ -71,8 +78,19 @@ class RuutuIE(InfoExtractor):
                 'thumbnail': r're:^https?://.*\.jpg$',
                 'age_limit': 0,
             },
-            'expected_warnings': ['HTTP Error 502: Bad Gateway'],
-        }
+            'expected_warnings': [
+                'HTTP Error 502: Bad Gateway',
+                'Failed to download m3u8 information',
+            ],
+        },
+        {
+            'url': 'http://www.supla.fi/audio/2231370',
+            'only_matching': True,
+        },
+        {
+            'url': 'https://static.nelonenmedia.fi/player/misc/embed_player.html?nid=3618790',
+            'only_matching': True,
+        },
     ]
 
     def _real_extract(self, url):
