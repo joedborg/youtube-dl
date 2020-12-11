@@ -241,19 +241,9 @@ class FacebookIE(InfoExtractor):
         },
         'playlist_count': 2,
     }, {
-        # data.video_home_www_feed.video_home_sections.edges[].node.feed_section_renderer.section.section_components.edges[].node.feed_unit.attachments
-        'url': 'https://www.facebook.com/watch/?v=125475412191640',
-        'md5': 'a38bed45dd1b2881ea230f3561c914b7',
-        'info_dict': {
-            'id': '373249263226147',
-            'ext': 'mp4',
-            'title': 'شوف بعينيك ماذا يحدث...ماناش نخوف فيكم رانا ننقل لكم مايحدث...',
-            'description': 'شوف بعينيك ماذا يحدث خويا العزيز...ماناش نخوف فيكم رانا ننقل لكم مايحدث...\nتذكروا جيدا ماكنا نقوله لكم منذ سنوات وماكنا نحذركم .',
-            'timestamp': 1550353963,
-            'upload_date': '20190216',
-            'uploader_id': '176917942440142',
-        },
-        'skip': 'Requires logging in',
+        # data.video.story.attachments[].media
+        'url': 'https://www.facebook.com/watch/?v=647537299265662',
+        'only_matching': True,
     }]
 
     @staticmethod
@@ -439,14 +429,6 @@ class FacebookIE(InfoExtractor):
                     edges = try_get(data, lambda x: x['mediaset']['currMedia']['edges'], list) or []
                     for edge in edges:
                         parse_attachment(edge, key='node')
-
-                    video_home_sections = try_get(data, lambda x: x['video_home_www_feed']['video_home_sections']['edges'], list) or []
-                    for video_home_section in video_home_sections:
-                        section_components = try_get(video_home_section, lambda x: x['node']['feed_section_renderer']['section']['section_components']['edges'], list) or []
-                        for section_component in section_components:
-                            attachments = try_get(section_component, lambda x: x['node']['feed_unit']['attachments'], list) or []
-                            for attachment in attachments:
-                                parse_attachment(attachment)
 
                     if not entries:
                         video = data.get('video') or {}
