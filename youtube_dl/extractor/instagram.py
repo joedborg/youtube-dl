@@ -22,7 +22,7 @@ from ..utils import (
 
 
 class InstagramIE(InfoExtractor):
-    _VALID_URL = r'(?P<url>https?://(?:www\.)?instagram\.com/(?:p|tv)/(?P<id>[^/?#&]+))'
+    _VALID_URL = r'(?P<url>https?://(?:www\.)?instagram\.com/(?:p|tv|reel)/(?P<id>[^/?#&]+))'
     _TESTS = [{
         'url': 'https://instagram.com/p/aye83DjauH/?foo=bar#abc',
         'md5': '0d2da106a9d2631273e192b372806516',
@@ -35,7 +35,7 @@ class InstagramIE(InfoExtractor):
             'timestamp': 1371748545,
             'upload_date': '20130620',
             'uploader_id': 'naomipq',
-            'uploader': 'Naomi Leonor Phan-Quang',
+            'uploader': 'B E A U T Y  F O R  A S H E S',
             'like_count': int,
             'comment_count': int,
             'comments': list,
@@ -94,6 +94,9 @@ class InstagramIE(InfoExtractor):
         'only_matching': True,
     }, {
         'url': 'https://www.instagram.com/tv/aye83DjauH/',
+        'only_matching': True,
+    }, {
+        'url': 'https://www.instagram.com/reel/CDUMkliABpa/',
         'only_matching': True,
     }]
 
@@ -161,12 +164,18 @@ class InstagramIE(InfoExtractor):
             uploader = media.get('owner', {}).get('full_name')
             uploader_id = media.get('owner', {}).get('username')
 
-            def get_count(key, kind):
-                return int_or_none(try_get(
-                    media, (lambda x: x['edge_media_%s' % key]['count'],
-                            lambda x: x['%ss' % kind]['count'])))
+            def get_count(keys, kind):
+                if not isinstance(keys, (list, tuple)):
+                    keys = [keys]
+                for key in keys:
+                    count = int_or_none(try_get(
+                        media, (lambda x: x['edge_media_%s' % key]['count'],
+                                lambda x: x['%ss' % kind]['count'])))
+                    if count is not None:
+                        return count
             like_count = get_count('preview_like', 'like')
-            comment_count = get_count('to_comment', 'comment')
+            comment_count = get_count(
+                ('preview_comment', 'to_comment', 'to_parent_comment'), 'comment')
 
             comments = [{
                 'author': comment.get('user', {}).get('username'),
