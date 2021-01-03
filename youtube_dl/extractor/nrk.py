@@ -118,26 +118,42 @@ class NRKIE(NRKBaseIE):
         'url': 'nrk:l_96f4f1b0-de54-4e6a-b4f1-b0de54fe6af8',
         'only_matching': True,
     }, {
+        'url': 'nrk:podcast/l_96f4f1b0-de54-4e6a-b4f1-b0de54fe6af8',
+        'only_matching': True,
+    }, {
         # clip
         'url': 'nrk:150533',
         'only_matching': True,
     }, {
-        # episode
+        'url': 'nrk:clip/150533',
+        'only_matching': True,
+    }, {
+        # program
         'url': 'nrk:MDDP12000117',
+        'only_matching': True,
+    }, {
+        'url': 'nrk:program/ENRK10100318',
         'only_matching': True,
     }, {
         # direkte
         'url': 'nrk:nrk1',
         'only_matching': True,
+    }, {
+        'url': 'nrk:channel/nrk1',
+        'only_matching': True,
     }]
 
-    def _extract_from_playback(self, video_id):
+    def _real_extract(self, url):
+        video_id = self._match_id(url).split('/')[-1]
+
         path_templ = 'playback/%s/' + video_id
 
         def call_playback_api(item, query=None):
             return self._call_api(path_templ % item, video_id, item, query=query)
         # known values for preferredCdn: akamai, iponly, minicdn and telenor
         manifest = call_playback_api('manifest', {'preferredCdn': 'akamai'})
+
+        video_id = try_get(manifest, lambda x: x['id'], compat_str) or video_id
 
         if manifest.get('playability') == 'nonPlayable':
             self._raise_error(manifest['nonPlayable'])
@@ -188,6 +204,9 @@ class NRKIE(NRKBaseIE):
                 'height': int_or_none(image.get('pixelHeight')),
             })
 
+        age_limit = int_or_none(try_get(
+            data, lambda x: x['legalAge']['body']['rating']['code']))
+
         return {
             'id': video_id,
             'title': title,
@@ -195,12 +214,9 @@ class NRKIE(NRKBaseIE):
             'description': description,
             'duration': duration,
             'thumbnails': thumbnails,
+            'age_limit': age_limit,
             'formats': formats,
         }
-
-    def _real_extract(self, url):
-        video_id = self._match_id(url)
-        return self._extract_from_playback(video_id)
 
 
 class NRKTVIE(InfoExtractor):
