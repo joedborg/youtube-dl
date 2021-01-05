@@ -9,7 +9,6 @@ import re
 
 from .common import InfoExtractor
 from ..compat import (
-    compat_kwargs,
     compat_parse_qs,
     compat_str,
     compat_urlparse,
@@ -42,30 +41,16 @@ class TwitchBaseIE(InfoExtractor):
     _CLIENT_ID = 'kimne78kx3ncx6brgo4mv6wki5h1ko'
     _NETRC_MACHINE = 'twitch'
 
-    def _handle_error(self, response):
-        if not isinstance(response, dict):
-            return
-        error = response.get('error')
-        if error:
-            raise ExtractorError(
-                '%s returned error: %s - %s' % (self.IE_NAME, error, response.get('message')),
-                expected=True)
-
-    def _call_api(self, path, item_id, *args, **kwargs):
-        headers = kwargs.get('headers', {}).copy()
-        headers.update({
-            'Accept': 'application/vnd.twitchtv.v5+json; charset=UTF-8',
-            'Client-ID': self._CLIENT_ID,
-        })
-        kwargs.update({
-            'headers': headers,
-            'expected_status': (400, 410),
-        })
-        response = self._download_json(
-            '%s/%s' % (self._API_BASE, path), item_id,
-            *args, **compat_kwargs(kwargs))
-        self._handle_error(response)
-        return response
+    _OPERATION_HASHES = {
+        'CollectionSideBar': '27111f1b382effad0b6def325caef1909c733fe6a4fbabf54f8d491ef2cf2f14',
+        'FilterableVideoTower_Videos': 'a937f1d22e269e39a03b509f65a7490f9fc247d7f83d6ac1421523e3b68042cb',
+        'ClipsCards__User': 'b73ad2bfaecfd30a9e6c28fada15bd97032c83ec77a0440766a56fe0bd632777',
+        'ChannelCollectionsContent': '07e3691a1bad77a36aba590c351180439a40baefc1c275356f40fc7082419a84',
+        'StreamMetadata': '1c719a40e481453e5c48d9bb585d971b8b372f8ebb105b17076722264dfa5b3e',
+        'ComscoreStreamingQuery': 'e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01',
+        'VideoPreviewOverlay': '3006e77e51b128d838fa4e835723ca4dc9a05c5efd4466c1085215c6e437e65c',
+        'VideoMetadata': '226edb3e692509f727fd56821f5653c05740242c82b0388883e0c0e75dcbf687',
+    }
 
     def _real_initialize(self):
         self._login()
@@ -151,29 +136,6 @@ class TwitchBaseIE(InfoExtractor):
                     })
         self._sort_formats(formats)
 
-    def _download_access_token(self, channel_name):
-        return self._call_api(
-            'api/channels/%s/access_token' % channel_name, channel_name,
-            'Downloading access token JSON')
-
-    def _extract_channel_id(self, token, channel_name):
-        return compat_str(self._parse_json(token, channel_name)['channel_id'])
-
-
-class TwitchGraphQLBaseIE(TwitchBaseIE):
-    _PAGE_LIMIT = 100
-
-    _OPERATION_HASHES = {
-        'CollectionSideBar': '27111f1b382effad0b6def325caef1909c733fe6a4fbabf54f8d491ef2cf2f14',
-        'FilterableVideoTower_Videos': 'a937f1d22e269e39a03b509f65a7490f9fc247d7f83d6ac1421523e3b68042cb',
-        'ClipsCards__User': 'b73ad2bfaecfd30a9e6c28fada15bd97032c83ec77a0440766a56fe0bd632777',
-        'ChannelCollectionsContent': '07e3691a1bad77a36aba590c351180439a40baefc1c275356f40fc7082419a84',
-        'StreamMetadata': '1c719a40e481453e5c48d9bb585d971b8b372f8ebb105b17076722264dfa5b3e',
-        'ComscoreStreamingQuery': 'e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01',
-        'VideoPreviewOverlay': '3006e77e51b128d838fa4e835723ca4dc9a05c5efd4466c1085215c6e437e65c',
-        'VideoMetadata': '226edb3e692509f727fd56821f5653c05740242c82b0388883e0c0e75dcbf687',
-    }
-
     def _download_base_gql(self, video_id, ops, note, fatal=True):
         return self._download_json(
             'https://gql.twitch.tv/gql', video_id, note,
@@ -193,7 +155,7 @@ class TwitchGraphQLBaseIE(TwitchBaseIE):
             }
         return self._download_base_gql(video_id, ops, note)
 
-    def _download_access_token_gql(self, video_id, token_kind, param_name):
+    def _download_access_token(self, video_id, token_kind, param_name):
         method = '%sPlaybackAccessToken' % token_kind
         ops = {
             'query': '''{
@@ -216,7 +178,7 @@ class TwitchGraphQLBaseIE(TwitchBaseIE):
             'Downloading %s access token GraphQL' % token_kind)['data'][method]
 
 
-class TwitchVodIE(TwitchGraphQLBaseIE):
+class TwitchVodIE(TwitchBaseIE):
     IE_NAME = 'twitch:vod'
     _VALID_URL = r'''(?x)
                     https?://
@@ -284,12 +246,6 @@ class TwitchVodIE(TwitchGraphQLBaseIE):
     }]
 
     def _download_info(self, item_id):
-        return self._extract_info(
-            self._call_api(
-                'kraken/videos/%s' % item_id, item_id,
-                'Downloading video info JSON'))
-
-    def _download_info_gql(self, item_id):
         data = self._download_gql(
             item_id, [{
                 'operationName': 'VideoMetadata',
@@ -367,8 +323,8 @@ class TwitchVodIE(TwitchGraphQLBaseIE):
     def _real_extract(self, url):
         vod_id = self._match_id(url)
 
-        info = self._download_info_gql(vod_id)
-        access_token = self._download_access_token_gql(vod_id, 'video', 'id')
+        info = self._download_info(vod_id)
+        access_token = self._download_access_token(vod_id, 'video', 'id')
 
         formats = self._extract_m3u8_formats(
             '%s/vod/%s.m3u8?%s' % (
@@ -423,7 +379,7 @@ def _make_video_result(node):
     }
 
 
-class TwitchCollectionIE(TwitchGraphQLBaseIE):
+class TwitchCollectionIE(TwitchBaseIE):
     _VALID_URL = r'https?://(?:(?:www|go|m)\.)?twitch\.tv/collections/(?P<id>[^/]+)'
 
     _TESTS = [{
@@ -460,7 +416,9 @@ class TwitchCollectionIE(TwitchGraphQLBaseIE):
             entries, playlist_id=collection_id, playlist_title=title)
 
 
-class TwitchPlaylistBaseIE(TwitchGraphQLBaseIE):
+class TwitchPlaylistBaseIE(TwitchBaseIE):
+    _PAGE_LIMIT = 100
+
     def _entries(self, channel_name, *args):
         cursor = None
         variables_common = self._make_variables(channel_name, *args)
@@ -498,49 +456,6 @@ class TwitchPlaylistBaseIE(TwitchGraphQLBaseIE):
                     cursor = edge.get('cursor')
                     yield entry
             if not cursor or not isinstance(cursor, compat_str):
-                break
-
-    # Deprecated kraken v5 API
-    def _entries_kraken(self, channel_name, broadcast_type, sort):
-        access_token = self._download_access_token(channel_name)
-        channel_id = self._extract_channel_id(access_token['token'], channel_name)
-        offset = 0
-        counter_override = None
-        for counter in itertools.count(1):
-            response = self._call_api(
-                'kraken/channels/%s/videos/' % channel_id,
-                channel_id,
-                'Downloading video JSON page %s' % (counter_override or counter),
-                query={
-                    'offset': offset,
-                    'limit': self._PAGE_LIMIT,
-                    'broadcast_type': broadcast_type,
-                    'sort': sort,
-                })
-            videos = response.get('videos')
-            if not isinstance(videos, list):
-                break
-            for video in videos:
-                if not isinstance(video, dict):
-                    continue
-                video_url = url_or_none(video.get('url'))
-                if not video_url:
-                    continue
-                yield {
-                    '_type': 'url_transparent',
-                    'ie_key': TwitchVodIE.ie_key(),
-                    'id': video.get('_id'),
-                    'url': video_url,
-                    'title': video.get('title'),
-                    'description': video.get('description'),
-                    'timestamp': unified_timestamp(video.get('published_at')),
-                    'duration': float_or_none(video.get('length')),
-                    'view_count': int_or_none(video.get('views')),
-                    'language': video.get('language'),
-                }
-            offset += self._PAGE_LIMIT
-            total = int_or_none(response.get('_total'))
-            if total and offset >= total:
                 break
 
 
@@ -784,7 +699,7 @@ class TwitchVideosCollectionsIE(TwitchPlaylistBaseIE):
             playlist_title='%s - Collections' % channel_name)
 
 
-class TwitchStreamIE(TwitchGraphQLBaseIE):
+class TwitchStreamIE(TwitchBaseIE):
     IE_NAME = 'twitch:stream'
     _VALID_URL = r'''(?x)
                     https?://
@@ -874,7 +789,7 @@ class TwitchStreamIE(TwitchGraphQLBaseIE):
         if not stream:
             raise ExtractorError('%s is offline' % channel_name, expected=True)
 
-        access_token = self._download_access_token_gql(
+        access_token = self._download_access_token(
             channel_name, 'stream', 'channelName')
         token = access_token['value']
 
@@ -927,7 +842,7 @@ class TwitchStreamIE(TwitchGraphQLBaseIE):
         }
 
 
-class TwitchClipsIE(TwitchGraphQLBaseIE):
+class TwitchClipsIE(TwitchBaseIE):
     IE_NAME = 'twitch:clips'
     _VALID_URL = r'''(?x)
                     https?://
