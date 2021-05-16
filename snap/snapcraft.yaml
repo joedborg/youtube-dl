@@ -43,6 +43,7 @@ parts:
       - libpulse0
       - libslang2
       - libglu1-mesa
+      - atomicparsley
     override-pull: |
       snapcraftctl pull
       $SNAPCRAFT_STAGE/scriptlets/youtube-dl-pull
