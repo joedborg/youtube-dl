@@ -449,7 +449,7 @@ class JSInterpreter(object):
                     catch_vars = {}
                     if m.group('err'):
                         catch_vars[m.group('err')] = err.error if isinstance(err, JS_Throw) else err
-                    catch_vars = local_vars.new_child(catch_vars)
+                    catch_vars = local_vars.new_child(m=catch_vars)
                     err = None
                     pending = self.interpret_statement(sub_expr, catch_vars, allow_recursion)
 
