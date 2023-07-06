@@ -19,6 +19,10 @@ try:
 except OSError:
     pass
 
+from youtube_dl.compat import compat_register_utf8
+
+compat_register_utf8()
+
 from youtube_dl.extractor import _ALL_CLASSES
 from youtube_dl.extractor.common import InfoExtractor, SearchInfoExtractor
 
