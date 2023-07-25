@@ -41,10 +41,12 @@ from youtube_dl.compat import (
 
 from youtube_dl.utils import (
     sanitized_Request,
+    update_Request,
     urlencode_postdata,
 )
 
 from test.helper import (
+    expectedFailureIf,
     FakeYDL,
     FakeLogger,
     http_server_port,
@@ -243,6 +245,11 @@ class HTTPTestRequestHandler(compat_http_server.BaseHTTPRequestHandler):
 
 
 class TestHTTP(unittest.TestCase):
+    # when does it make sense to check the SSL certificate?
+    _check_cert = (
+        sys.version_info >= (3, 2)
+        or (sys.version_info[0] == 2 and sys.version_info[1:] >= (7, 19)))
+
     def setUp(self):
         # HTTP server
         self.http_httpd = compat_http_server.HTTPServer(
@@ -307,10 +314,7 @@ class TestHTTP(unittest.TestCase):
             else self.https_port if scheme == 'https'
             else self.http_port, path)
 
-    @unittest.skipUnless(
-        sys.version_info >= (3, 2)
-        or (sys.version_info[0] == 2 and sys.version_info[1:] >= (7, 9)),
-        'No support for certificate check in SSL')
+    @unittest.skipUnless(_check_cert, 'No support for certificate check in SSL')
     def test_nocheckcertificate(self):
         with FakeYDL({'logger': FakeLogger()}) as ydl:
             with self.assertRaises(compat_urllib_error.URLError):
@@ -376,6 +380,8 @@ class TestHTTP(unittest.TestCase):
                 with self.assertRaises(compat_urllib_HTTPError):
                     do_req(code, 'GET')
 
+    # Jython 2.7.1 times out for some reason
+    @expectedFailureIf(sys.platform.startswith('java') and sys.version_info < (2, 7, 2))
     def test_content_type(self):
         # https://github.com/yt-dlp/yt-dlp/commit/379a4f161d4ad3e40932dcf5aca6e6fb9715ab28
         with FakeYDL({'nocheckcertificate': True}) as ydl:
@@ -389,6 +395,18 @@ class TestHTTP(unittest.TestCase):
             r = sanitized_Request(self._test_url('headers'), data=urlencode_postdata({'test': 'test'}))
             headers = ydl.urlopen(r).read().decode('utf-8')
             self.assertIn('Content-Type: application/x-www-form-urlencoded', headers)
+
+    def test_update_req(self):
+        req = sanitized_Request('http://example.com')
+        assert req.data is None
+        assert req.get_method() == 'GET'
+        assert not req.has_header('Content-Type')
+        # Test that zero-byte payloads will be sent
+        req = update_Request(req, data=b'')
+        assert req.data == b''
+        assert req.get_method() == 'POST'
+        # yt-dl expects data to be encoded and Content-Type to be added by sender
+        # assert req.get_header('Content-Type') == 'application/x-www-form-urlencoded'
 
     def test_cookiejar(self):
         with FakeYDL() as ydl:
